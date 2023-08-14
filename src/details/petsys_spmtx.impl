@@ -1,0 +1,32 @@
+#include "petsys_spmtx.h"
+using namespace UCDPETSYS;
+
+inline int SSpMatrix::getRowNum() const
+{
+    return m_row_num;
+}
+
+inline int SSpMatrix::getColNum() const
+{
+    return m_col_num;
+}
+
+inline long long SSpMatrix::getNNZ() const
+{
+    return m_nnz;
+}
+
+inline float SSpMatrix::getScalingFactor() const
+{
+    return m_scaling_factor;
+}
+
+inline const int* SSpMatrix::getRowPtr() const
+{
+    return (m_row_ptr);
+}
+
+inline const SSpMatrix::PACKAGE* SSpMatrix::getP() const
+{
+    return (m_p);
+}

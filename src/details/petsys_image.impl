@@ -1,0 +1,260 @@
+#include <petsys_image.h>
+using namespace UCDPETSYS;
+
+template <typename T>
+Image<T>::Image(const size_t dim_i,
+                const size_t dim_j,
+                const size_t dim_k) :
+    m_dim_i(dim_i),
+    m_dim_j(dim_j),
+    m_dim_k(dim_k),
+    m_dim_ij(dim_i*dim_j)
+{
+    alloc(m_dim_i * m_dim_j * m_dim_k);
+}
+
+template <typename T>
+Image<T>::Image(const SIZE& sz) :
+    m_dim_i(sz.i),
+    m_dim_j(sz.j),
+    m_dim_k(sz.k),
+    m_dim_ij(sz.i*sz.j)
+{
+    alloc(m_dim_i * m_dim_j * m_dim_k);
+}
+
+template <typename T>
+Image<T>::Image(const size_t sz[]) :
+    m_dim_i(sz[0]),
+    m_dim_j(sz[1]),
+    m_dim_k(sz[2]),
+    m_dim_ij(sz[0]*sz[1])
+{
+    alloc(m_dim_i * m_dim_j * m_dim_k);
+}
+
+template <typename T>
+Image<T>::Image(const Image<T>& img)
+{
+    m_dim_i = img.m_dim_i;
+    m_dim_j = img.m_dim_j;
+    m_dim_k = img.m_dim_k;
+
+    if (img.m_data != 0) {
+        alloc(m_dim_i * m_dim_j * m_dim_k);
+        memcpy(m_data, img.m_data, sizeof(T)*img.getSize());
+    } else {
+        m_data = 0;
+    }
+}
+
+template <typename T>
+Image<T>& Image<T>::operator =(const Image<T>& img)
+{
+    if (this != &img) {
+        m_dim_i = img.m_dim_i;
+        m_dim_j = img.m_dim_j;
+        m_dim_k = img.m_dim_k;
+        // release old data
+        release();
+
+        // copy
+        if (img.m_data != 0) {
+            alloc(m_dim_i * m_dim_j * m_dim_k);
+            memcpy(m_data, img.m_data, sizeof(T) * img.getSize());
+        } else {
+            m_data = 0;
+        }
+    }
+
+    return *this;
+}
+
+template <typename T>
+Image<T>::~Image()
+{
+    release();
+#if 0
+    prompt("image released ... \n");
+#endif
+}
+
+template <typename T>
+inline void Image<T>::alloc(size_t sz)
+{
+    if (sz != 0) {
+        m_data = new T[sz];
+        memset(m_data, 0, sizeof(T)*sz);
+    } else {
+#if DEBUG
+        std::printf("invalid size: %lu\n", sz);
+        abort();
+#endif
+    }
+}
+
+template <typename T>
+inline void Image<T>::release()
+{
+    if (m_data != 0) {
+        delete [] m_data;
+    }
+}
+
+template <typename T>
+inline size_t Image<T>::getDimI() const
+{
+    return (m_dim_i);
+}
+
+template <typename T>
+inline size_t Image<T>::getDimJ() const
+{
+    return (m_dim_j);
+}
+
+template <typename T>
+inline size_t Image<T>::getDimK() const
+{
+    return (m_dim_k);
+}
+
+template <typename T>
+inline size_t Image<T>::getSize() const
+{
+    return (m_dim_i * m_dim_j * m_dim_k);
+}
+
+template <typename T>
+inline T* Image<T>::getPtr() const
+{
+    return (m_data);
+}
+
+template <typename T>
+inline void Image<T>::set(const T& val)
+{
+    for (size_t i = 0; i < getSize(); i ++)
+        m_data[i] = val;
+}
+
+template <typename T>
+inline void Image<T>::set(const size_t i,
+                          const size_t j,
+                          const size_t k,
+                          const T& val)
+{
+    m_data[sub2ind(i, j, k)] = val;
+}
+
+template <typename T>
+inline size_t Image<T>::sub2ind(const size_t i,
+                             const size_t j,
+                             const size_t k) const
+{
+    return (i + j * m_dim_i + k * m_dim_ij);
+}
+
+template <typename T>
+inline void Image<T>::ind2sub(const size_t idx, size_t& i, size_t& j, size_t& k) const
+{
+    k = idx / m_dim_ij;
+    size_t rem = idx - k * m_dim_ij;
+    i = rem % m_dim_i;
+    j = rem / m_dim_j;
+}
+
+template <typename T>
+inline T& Image<T>::operator [](const size_t index)
+{
+    return m_data[index];
+}
+
+template <typename T>
+inline const T& Image<T>::operator [](const size_t index) const
+{
+    return m_data[index];
+}
+
+template <typename T>
+inline T& Image<T>::operator ()(const size_t i, const size_t j, const size_t k)
+{
+    return m_data[i + j * m_dim_i + k * m_dim_ij];
+}
+
+template <typename T>
+inline const T& Image<T>::operator ()(const size_t i, const size_t j, const size_t k) const
+{
+    return m_data[i + j * m_dim_i + k * m_dim_ij];
+}
+
+template <typename T>
+inline void Image<T>::clear()
+{
+    if (m_data != 0) {
+        memset(m_data, 0, sizeof(T) * getSize());
+    }
+}
+
+template <typename T>
+bool Image<T>::read(const char* filename)
+{
+    std::ifstream input(filename, std::ios_base::binary);
+
+    if (input.good()) {
+
+        if (m_data != 0) {
+
+            // check file length
+            input.seekg(0, std::ios::end);
+            size_t file_size = input.tellg() / sizeof(T);
+            input.seekg(0, std::ios::beg);
+
+            size_t img_size = getSize();
+
+            if (file_size < img_size) {
+#if DEBUG
+                std::printf("somehow file size [%lu] "
+                			"< expected image size [%lu]\n", 
+                			file_size, img_size);
+#endif
+                img_size = file_size; // choose small size
+            }
+
+            input.read((char*)m_data, sizeof(T)*img_size);
+
+            if (input.fail()) {
+                return false;
+            }
+
+            return true;
+
+        } else {
+            return false;
+        }
+
+    } else {
+        return false;
+    }
+}
+
+template <class T>
+bool Image<T>::write(const char* filename) const
+{
+    std::ofstream output(filename, std::ios_base::binary);
+
+    if (output.good()) {
+
+        output.write((char*)m_data, sizeof(T)*getSize());
+
+        if (output.fail()) {
+            return false;
+        }
+
+        return true;
+
+    } else {
+        return false;
+    }
+}
+

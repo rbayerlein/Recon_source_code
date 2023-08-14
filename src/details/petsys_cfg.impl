@@ -1,0 +1,18 @@
+#include <petsys_cfg.h>
+using namespace UCDPETSYS;
+
+template<typename T>
+T Configurator::string_to_T(const std::string& s)
+{
+    if (s.empty()) {
+#if DEUBG
+        error("convert string to T failed: string is empty!");
+#endif
+        abort();
+    }
+
+    std::stringstream os(s);
+    T t; os >> t;
+
+    return t;
+}
