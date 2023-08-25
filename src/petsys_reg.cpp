@@ -1,6 +1,8 @@
 #include <petsys_reg.h>
 
-int Regularizer::NUMBER_OF_THREADS = 32;
+// int Regularizer::NUMBER_OF_THREADS = 32;
+int Regularizer::NUMBER_OF_THREADS = 64;
+
 
 Regularizer::Regularizer() :
 m_potential_function_type(0),
@@ -230,6 +232,14 @@ void Regularizer::calculateGradientBasedOnOptimizationTransfer(const Image<float
 {
 }
 
+// void Regularizer::gbcalg(const Image<float>& x,
+//         Image<float>& t1,
+//         Image<float>& t2,
+//         const Image<float>& cip,
+//         Image<int>* fd)
+// {
+// }
+
 void Regularizer::calculateGradient(const Image<float>& x, Image<float>& grad)
 {
 }
@@ -237,7 +247,8 @@ void Regularizer::calculateGradient(const Image<float>& x, Image<float>& grad)
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 PairwiseMRFRegularizer::PairwiseMRFRegularizer()
 {
-	Regularizer::Regularizer();
+	// Regularizer::Regularizer();
+	Regularizer();
 }
 
 PairwiseMRFRegularizer::~PairwiseMRFRegularizer()
@@ -1988,6 +1999,220 @@ void PatchBasedRegularizer::calculateTerm1AndTerm2Anisotropic(const Image<float>
 	}
 }
 
+
+
+
+// // Mengxi's version
+// void PatchBasedRegularizer::calculateTerm1AndTerm2AnisotropicCIP(const Image<float>& x,
+// 										   		   			  Image<int>& neighbor_patch_position_offset,
+// 										   		   			  Image<float>& term1,
+// 										   		   			  Image<float>& term2)
+// {
+//     // <Guobao>
+//     int gbi, gbj, gbk, fdi;
+    
+// 	int ni = x.getDimI();
+// 	int nj = x.getDimJ();
+// 	int nk = x.getDimK();
+    
+
+//     int ciplabel = 1;
+//     if (neighbor_patch_position_offset.getDimJ()==1)
+//     {
+//         ciplabel = 0;
+//     }
+    
+// //  <Guobao>   
+// //  @guobao use term1 to transfer cip image into function
+// //  and remember to clear term1. 
+//     Image<float> xcip(ni,nj,nk);
+//     for (int k = 0; k < nk; k ++) {
+//         for (int j = 0; j < nj; j ++) {
+//             for (int i = 0; i < ni; i ++) {
+//                 xcip(i,j,k) = term1(i,j,k);
+//                 term1(i,j,k) = 0;
+//             }}}
+    
+//     Image<float> gb_patch_j(m_patch_size, m_patch_size, m_patch_size);
+// 	Image<float> gb_patch_k(m_patch_size, m_patch_size, m_patch_size);
+//     // </Guobao>
+	
+// 	int nh = m_patch_size / 2;
+// 	Image<float> patch_j(m_patch_size, m_patch_size, m_patch_size);
+// 	Image<float> patch_k(m_patch_size, m_patch_size, m_patch_size);
+// 	Image<float> patch_diff(m_patch_size, m_patch_size, m_patch_size);
+	
+	
+// 	Image<float> patch_j1(m_patch_size, m_patch_size, m_patch_size);
+// 	Image<float> patch_k1(m_patch_size, m_patch_size, m_patch_size);
+// 	Image<float> patch_sum(m_patch_size, m_patch_size, m_patch_size);
+
+// 	for (int k = 0; k < nk; k ++) {
+	
+// 		for (int j = 0; j < nj; j ++) {
+			
+// 			for (int i = 0; i < ni; i ++) {
+                
+// //                 <Guobao>
+//                 if (ciplabel == 0)
+//                 {
+//                     gbi = neighbor_patch_position_offset(0);
+//                     gbj = neighbor_patch_position_offset(1);
+//                     gbk = neighbor_patch_position_offset(2);
+//                 }
+//                 else
+//                 {
+//                     fdi = k*ni*nj + j*ni +i;
+//                     gbi = neighbor_patch_position_offset(fdi,0);
+//                     gbj = neighbor_patch_position_offset(fdi,1);
+//                     gbk = neighbor_patch_position_offset(fdi,2);
+//                 }
+                
+// //                 if (i==132 && j==139 && k==61)
+// //                 {
+// //                     printf("%d %d %d\n",gbi,gbj,gbk);
+// //                 }
+                
+// //                 </Guobao>
+			
+// 				// patch j
+// 				for (int kk=0; kk<m_patch_size; kk++) {
+// 					for (int jj=0; jj<m_patch_size; jj++) {
+// 						for (int ii=0; ii<m_patch_size; ii++) {
+						
+// 							int i0 = i - nh + ii;
+// 							int j0 = j - nh + jj;
+// 							int k0 = k - nh + kk;
+							
+// 							patch_j(ii,jj,kk) = ((i0<0) || (i0>=ni) || 
+// 												 (j0<0) || (j0>=nj) || 
+// 												 (k0<0) || (k0>=nk)) ? 
+// 												 0.0 : x(i0, j0, k0);
+                                                 
+//                             gb_patch_j(ii,jj,kk) = ((i0<0) || (i0>=ni) || 
+// 												 (j0<0) || (j0>=nj) || 
+// 												 (k0<0) || (k0>=nk)) ? 
+// 												 0.0 : xcip(i0, j0, k0);                     
+                                                 
+							
+// 							patch_j1(ii,jj,kk) = ((i0<0) || (i0>=ni) || 
+// 												 (j0<0) || (j0>=nj) || 
+// 												 (k0<0) || (k0>=nk)) ? 
+// 												 0.0 : 1.0;					 
+							
+// 						}
+// 					}
+// 				}
+// 				float kappa1 = (m_spatial_variant_weight == 0) ? 1.0 : 
+// 								(*m_spatial_variant_weight)(i, j, k);
+			
+// 				// patch k, neighborhood patch j
+// 				float s = 0.0;
+//                 float gb_s = 0;
+// 				for (int kk=0; kk<m_patch_size; kk++) {
+// 					for (int jj=0; jj<m_patch_size; jj++) {
+// 						for (int ii=0; ii<m_patch_size; ii++) {
+						
+// 							int i0 = i - nh + ii + gbi;
+// 							int j0 = j - nh + jj + gbj;
+// 							int k0 = k - nh + kk + gbk;
+							
+// 							patch_k(ii,jj,kk) = ((i0<0) || (i0>=ni) || 
+// 												 (j0<0) || (j0>=nj) || 
+// 												 (k0<0) || (k0>=nk)) ? 
+// 												 0.0 : x(i0, j0, k0);
+                                                 
+//                             gb_patch_k(ii,jj,kk) = ((i0<0) || (i0>=ni) || 
+// 												 (j0<0) || (j0>=nj) || 
+// 												 (k0<0) || (k0>=nk)) ? 
+// 												 0.0 : xcip(i0, j0, k0);                     
+							
+// 							patch_k1(ii,jj,kk) = ((i0<0) || (i0>=ni) || 
+// 												 (j0<0) || (j0>=nj) || 
+// 												 (k0<0) || (k0>=nk)) ? 
+// 												 0.0 : 1.0;					 
+							
+// 							// l2-norm
+// 							float df = patch_j(ii,jj,kk) - patch_k(ii,jj,kk);							
+// 							s += df * df;							
+// 							patch_diff(ii,jj,kk) = df;
+                           
+// 							float sm = patch_j1(ii,jj,kk) + patch_k1(ii,jj,kk);
+// 							patch_sum(ii,jj,kk) = sm;
+                            
+// //                             @ guobao
+//                             gb_s += (gb_patch_j(ii,jj,kk) - gb_patch_k(ii,jj,kk)) * (gb_patch_j(ii,jj,kk) - gb_patch_k(ii,jj,kk));
+                            
+// 						}
+// 					}
+// 				}
+				
+// 				int iii = i + gbi;
+// 				int jjj = j + gbj;
+// 				int kkk = k + gbk;
+
+// 		float kappa2 = ( ((iii<0) || (iii>=ni) || 
+// 						 (jjj<0) || (jjj>=nj) ||  
+// 						 (kkk<0) || (kkk>=nk)) ) ? 0.0 : 
+// 							   ( (m_spatial_variant_weight == 0) ? 1.0 : 
+// 							  	(*m_spatial_variant_weight)(iii, jjj, kkk) );
+
+// 				// for weight;
+//                 float weight = dot_phi_over_t(sqrt(s)) * kappa1 * kappa2;
+                
+// //                 @ guobao
+//                 if(ciplabel == 1)
+//                 {
+// //                     gb_s = sqrt(gb_s);
+//                     weight = weight * exp( (-gb_s)/3/pow(10,-9) );
+// //                     weight = weight*6/50;
+//                 }
+                                
+								
+// 				for (int kk=0; kk<m_patch_size; kk++) {
+// 					int k0 = k - nh + kk;
+// 					if (k0 >= 0 && k0 < nk) {
+// 						for (int jj=0; jj<m_patch_size; jj++) {
+// 							int j0 = j - nh + jj;
+// 							if (j0 >= 0 && j0 < nj) {
+// 								for (int ii=0; ii<m_patch_size; ii++) {							
+// 									int i0 = i - nh + ii;									
+// 									if (i0 >= 0 && i0 < ni) {
+// 										term2(i0, j0, k0) += patch_diff(ii, jj, kk) * weight;
+// 										term1(i0, j0, k0) += patch_sum(ii, jj, kk) * weight;
+// 										//
+// 									}
+// 								}
+// 							}
+// 						}
+// 					}
+// 				}
+				
+// 				for (int kk=0; kk<m_patch_size; kk++) {
+// 					int k0 = k - nh + kk + neighbor_patch_position_offset(2);
+// 					if (k0 >= 0 && k0 < nk) {
+// 						for (int jj=0; jj<m_patch_size; jj++) {
+// 							int j0 = j - nh + jj + neighbor_patch_position_offset(1);
+// 							if (j0 >= 0 && j0 < nj) {
+// 								for (int ii=0; ii<m_patch_size; ii++) {
+// 									int i0 = i - nh + ii + neighbor_patch_position_offset(0);						
+// 									if (i0 >= 0 && i0 < ni) {							
+// 										term2(i0, j0, k0) -= patch_diff(ii, jj, kk) * weight;
+// 										term1(i0, j0, k0) += patch_sum(ii, jj, kk) * weight;
+// 									}
+									
+// 								}
+// 							}
+// 						}
+// 					}
+// 				}
+// 			}
+// 		}
+// 	}
+// }
+
+
+
 void PatchBasedRegularizer::calculateGradient(const Image<float>& x,
         									  Image<float>& grad)
 {
@@ -2216,3 +2441,110 @@ void MeanBasedRegularizer::calculateGradientBasedOnOptimizationTransfer(const Im
 		term2[j] = x[j] - (*m_mean_image)[j];
 	}
 }            										 				    
+
+
+
+
+
+// // @Guobao useless. Just for compiler.
+// void MeanBasedRegularizer::gbcalg(const Image<float>& x,
+//      Image<float>& t1,Image<float>& t2,const Image<float>& cip,Image<int>* fd)
+// {
+//     printf("\nSorry, currently the code dose not support mean based CIP.\n");
+//     abort();
+// }
+// void PairwiseMRFRegularizer::gbcalg(const Image<float>& x,
+//         Image<float>& t1,Image<float>& t2,const Image<float>& cip,Image<int>* fd)
+// {
+//     printf("\nSorry, currently the code dose not support pairwise CIP.\n");
+//     abort();
+// }
+
+
+
+// void PatchBasedRegularizer::gbcalg(const Image<float>& x,
+//         								 Image<float>& t1,
+//         								 Image<float>& t2,
+//                                    const Image<float>& cip,
+//                                          Image<int>* fd)
+// {
+// //     ref line 1434
+    
+//     int ni = x.getDimI();
+// 	int nj = x.getDimJ();
+// 	int nk = x.getDimK();
+    
+// //     printf("%d %d %d\n",ni,nj,nk);
+    
+//     int nvoxel = fd->getDimI();      // number of voxel (300x300x96 for phantom)
+//     int nneighbor = fd->getDimJ();   // number of neighbor (50 (out of 7x7x7) by default)
+// //     Image<int> fdsub(nvoxel,3);
+    
+//     std::vector<Image<int>* > fdsub;
+//     fdsub.resize(nneighbor);
+        
+//     std::vector<Image<float>* > t1_list;
+// 	std::vector<Image<float>* > t2_list;
+//     t1_list.resize(nneighbor);
+// 	t2_list.resize(nneighbor);
+
+// // 	ref line 1850
+// // 	if (!m_is_isotropic) {
+// // 
+// 		size_t n = 0;
+// 		#pragma omp parallel for private(n) num_threads(Regularizer::NUMBER_OF_THREADS)
+// 		for (n = 0; n < nneighbor; n ++) {
+// 			t1_list[n] = new Image<float>(ni, nj, nk);
+// 			t2_list[n] = new Image<float>(ni, nj, nk);
+//             fdsub[n] = new Image<int>(nvoxel,3);
+            
+            
+            
+//             for (int k = 0; k < nk; k ++) {
+//                 for (int j = 0; j < nj; j ++) {
+//                     for (int i = 0; i < ni; i ++) {
+//                         (*t1_list[n])(i,j,k) = cip(i,j,k);
+//                         for(int ii=0;ii<3;ii++)
+//                         {
+//                             (*fdsub[n])(k*ni*nj+j*ni+i,ii) = (*fd)(k*ni*nj+j*ni+i,n,ii);
+//                         }
+                        
+//                     }}}
+
+// 			calculateTerm1AndTerm2AnisotropicCIP(x, *fdsub[n], *t1_list[n], *t2_list[n]);
+//             delete fdsub[n];
+// 		}
+// // 	
+// // 	} else {
+// // 
+// // // 		size_t n = 0;       ??????
+// // 		Image<float>* weight = calculateWeightIsotropic(x);
+// // 
+// // 		#pragma omp parallel for private(n) num_threads(Regularizer::NUMBER_OF_THREADS)
+// // 		for (int n = 0; n < nneighbor; n ++) {
+// // 			t1_list[n] = new Image<float>(ni, nj, nk);
+// // 			t2_list[n] = new Image<float>(ni, nj, nk);
+// // 			calculateTerm1AndTerm2Isotropic(x, *m_neighbor_patch_position_offset[n], 
+// // 											*weight, *t1_list[n], *t2_list[n]);
+// // 		}
+// // 
+// // 		delete weight;
+// // 	}
+// // 
+// 	for (size_t n = 0; n < nneighbor; n ++) {
+// 		int j = 0;
+// 		#pragma omp parallel for private(j) num_threads(Regularizer::NUMBER_OF_THREADS)
+// 		for (j = 0; j < x.getSize(); j ++) {
+// 			t1[j] += (*t1_list[n])[j];
+// 			t2[j] += (*t2_list[n])[j];
+// 		}
+// 		delete t1_list[n];
+// 		delete t2_list[n];
+        
+// 	}
+    
+// }
+
+
+
+

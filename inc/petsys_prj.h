@@ -57,7 +57,10 @@ public:
 public:
 	void initializeIPSFModel(const SIZE& image_size, 
 						 	 const char* trans_psf_file, 
-						 	 const char* axial_psf_file); 
+						 	 const char* axial_psf_file);
+
+    // void initializeKernelModel(const SIZE& image_size, 
+    //                          const char* kernel_matrix_file);  
 	
 	typedef std::vector<std::pair<int, int> > XtalPair;
 	XtalPair createCrystalPairs(const int num_of_detblocks_t,
@@ -69,6 +72,9 @@ public:
 protected:
 
 	IPSFModel* m_ipsf_model;
+
+    // IKernelModel* m_ikernel_model;
+
 	Image<float>* m_sensitivity;
     std::vector<float> m_mul_fac_buff;
     std::vector<float> m_add_fac_buff;

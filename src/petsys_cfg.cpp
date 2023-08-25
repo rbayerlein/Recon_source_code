@@ -161,6 +161,9 @@ void Configurator::setDefaultParms(SYSTEMPARAMETERS& sysparms)
     sysparms.regularizer_model_type = -1;
     sysparms.number_of_radial_bins = -1;
     sysparms.regularizer_spatial_variant_weight = "";
+
+    // sysparms.gb_alpha = 0;
+    // sysparms.gb_CIP = "";
 }
 
 bool Configurator::isValidKey(const std::string& key,
@@ -730,5 +733,25 @@ bool Configurator::fillSysParms(const std::string& key,
 		sysparms.number_of_radial_bins = Configurator::string_to_T<int>(value);
 	}
 
+
+//     // Guobao's alpha
+//     if (key.compare("gb_alpha") == 0) {
+//         std::vector<std::string> t_buff;
+//         sysparms.gb_alpha = Configurator::string_to_T<double>(value);
+
+//         if (sysparms.gb_alpha > 1 || sysparms.gb_alpha < 0 ) {
+//             SystemLog::write("invalid parameter '%s', "
+//                              "note: gb_alpha should be between 0 and 1.\n",
+//                              value.c_str());
+//             return false;
+//         }
+//     } 
+    
+//     // gb_CIP
+//     if (key.compare("gb_CIP") == 0) {
+//         sysparms.gb_CIP = value; // only take one parameter
+//     }
+    
+    
     return true;
 }

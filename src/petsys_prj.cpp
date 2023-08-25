@@ -1,7 +1,12 @@
 #include <petsys_prj.h>
 
-int Projector::NUMBER_OF_THREADS_FP = 32;
-int Projector::NUMBER_OF_THREADS_BP = 32;
+// int Projector::NUMBER_OF_THREADS_FP = 32;
+// int Projector::NUMBER_OF_THREADS_BP = 32;
+
+
+int Projector::NUMBER_OF_THREADS_FP = 48;
+int Projector::NUMBER_OF_THREADS_BP = 48;
+
 
 Projector::XtalPair Projector::createCrystalPairs(const int num_of_detblocks_t,
         									      const int xtal_array_size_t,
@@ -193,4 +198,31 @@ void Projector::initializeIPSFModel(const SIZE& image_size,
 	    }
 	}
 }
+
+
+
+
+// void Projector::initializeKernelModel(const SIZE& image_size, 
+//                                     const char* kernel_matrix_file)
+// {
+//     if (m_ikernel_model != 0) {
+//         SystemLog::write("error, IKernel model is already created.\n");
+//         abort();
+//     } else {
+//         m_ikernel_model = new IKernelModel(image_size);
+//         if (!m_ikernel_model->initialize(kernel_matrix_file)) {
+//             SystemLog::write("kernel intialization error ... %s\n", 
+//             kernel_matrix_file);
+//         }
+//     }
+// }
+
+
+
+
+
+
+
+
+
 

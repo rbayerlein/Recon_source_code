@@ -41,6 +41,12 @@ public:
             												 Image<float>& term1,
             												 Image<float>& term2);
 
+    // virtual void gbcalg(const Image<float>& x,
+    //         												 Image<float>& term1,
+    //         												 Image<float>& term2,
+    //                                                          const Image<float>& cip,
+    //                                                          Image<int>* fd);
+
 	virtual void calculateGradient(const Image<float>& x, Image<float>& grad);	
 	
 public:	
@@ -96,6 +102,13 @@ public:
             										 Image<float>& term1,
             										 Image<float>& term2);   
 
+    // //     @Guobao. similar function to calculate global penalty (gradient)
+    // void gbcalg(const Image<float>& x,
+    //         										   Image<float>& term1,
+    //         										   Image<float>& term2,
+    //                                                    const Image<float>& cip,
+    //                                                    Image<int>* fd);
+
 	void calculateGradient(const Image<float>& x, Image<float>& grad) {};	
 
 private:
@@ -122,6 +135,13 @@ public:
 	void calculateGradientBasedOnOptimizationTransfer(const Image<float>& x,
             										 Image<float>& term1,
             										 Image<float>& term2); // gradient of surrograte
+
+    //     @Guobao. similar function to calculate global penalty (gradient)
+    void gbcalg(const Image<float>& x,
+            										   Image<float>& term1,
+            										   Image<float>& term2,
+                                                       const Image<float>& cip,
+                                                       Image<int>* fd);    
 
 	void calculateGradient(const Image<float>& x, Image<float>& grad); // gradient of original function
 
@@ -181,6 +201,13 @@ public:
 	void calculateGradientBasedOnOptimizationTransfer(const Image<float>& x,
             										 Image<float>& term1,
             										 Image<float>& term2);
+
+//     @Guobao. similar function to calculate global penalty (gradient)
+    void gbcalg(const Image<float>& x,
+            										   Image<float>& term1,
+            										   Image<float>& term2,
+                                                       const Image<float>& cip,
+                                                       Image<int>* fd);    
 
 	void calculateGradient(const Image<float>& x, Image<float>& grad);
 

@@ -46,7 +46,11 @@ static std::string g_sysopts("image_size,"
                              "warmup_setting,"
                              "iteration_setting,"
                              "input_raw_data_file,"
-                             "input_raw_data_format_type");
+                             "input_raw_data_format_type,"
+                             "kernel_matrix"
+                             "gb_alpha,"
+                             "gb_CIP");
+                             // "input_raw_data_format_type");
 
 //
 // pick options that are necessary for a minimal requirement
@@ -155,6 +159,13 @@ typedef struct tagSYSTEMPARAMETERS {
     int number_of_iterations;
     int stepsize_for_intermediate_result;
     int number_of_radial_bins;
+
+    std::string kernel_matrix; 
+
+    float gb_alpha;
+    std::string gb_CIP;
+
+    
 } SYSTEMPARAMETERS;
 
 } // end of UCD_PET_SYS

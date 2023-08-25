@@ -111,45 +111,189 @@ inline bool DrawLine::hitCylFOV(float& tmin, float& tmax,
     }
 }
 
-//****************************************************************************************
-//      Check if the ray is within the recon FOV (Box shape), if not set the projection to zero
-//****************************************************************************************
+
+
+// v0: Jian's code for object's length longer than scanner
 inline bool DrawLine::hitBoxFOV(float& tmin, float& tmax,
                                 const float p0x, const float dx,
                                 const float p0y, const float dy)
 {
     //not use true boundaries but cuts, to avoid boundary check error
+    float tx0 = (m_x_cuts[0] - p0x) / dx;
+    float tx1 = (m_x_cuts[m_img_size_j - 1] - p0x) / dx;
 
-    //*************************************
-    //      X
-    //*************************************
-    float tx0 = (m_x_cuts[0] - p0x) / dx;                   // m_x_cuts[0] = center of the first voxel along x direction
-    float tx1 = (m_x_cuts[m_img_size_j - 1] - p0x) / dx;    // m_x_cuts[m_img_size_j - 1] = center of the last voxel along x direction
     if (dx < 0.0f) {
         std::swap(tx0, tx1);
     }
+
     tx0 = std::max(tx0, 0.0f);
     tx1 = std::min(tx1, 1.0f);
-
-    //*************************************
-    //      Y
-    //*************************************
     float ty0 = (m_y_cuts[0] - p0y) / dy;
     float ty1 = (m_y_cuts[m_img_size_i - 1] - p0y) / dy;
+
     if (dy < 0.0f) {
         std::swap(ty0, ty1);
     }
+
     ty0 = std::max(ty0, 0.0f);
     ty1 = std::min(ty1, 1.0f);
 
-    //*************************************
-    //      tmin and tmax
-    //*************************************
     tmin = std::max(tx0, ty0);
     tmax = std::min(tx1, ty1);
 
     return (tmin < tmax);
 }
+
+
+
+
+typedef int INT;
+typedef float REAL;
+
+//Xuezhu's modified code for EXPLORER (object's length maybe shorter than scanner)
+// inline bool ImageRayTracer::hitCheck(const REAL p0x, const REAL p0y, const REAL p0z,
+//                                      const REAL dx, const REAL dy, const REAL dz,
+//                                      REAL& t_min, REAL& t_max)
+inline bool DrawLine::hitCheck(const REAL p0x, const REAL p0y, const REAL p0z,
+                               const REAL dx,  const REAL dy,  const REAL dz,
+                               REAL& t_min, REAL& t_max)
+{
+
+    INT m_vdim_i = m_img_size_i;
+    INT m_vdim_j = m_img_size_j;
+    INT m_vdim_k = m_img_size_k;
+    
+    // REAL m_vox_size_i = m_vox_size_i;
+    // REAL m_vox_size_j = m_vox_size_j;
+    // REAL m_vox_size_k = m_vox_size_k;
+
+    REAL m_vbd_x0;
+    REAL m_vbd_x1;
+    REAL m_vbd_y0;
+    REAL m_vbd_y1;
+    REAL m_vbd_z0;
+    REAL m_vbd_z1;
+
+    // m_vbd_y0 = -(vdim_i * vox_size_i) * 0.5;
+    // m_vbd_y1 = +(vdim_i * vox_size_i) * 0.5;
+    // m_vbd_x0 = -(vdim_j * vox_size_j) * 0.5;
+    // m_vbd_x1 = +(vdim_j * vox_size_j) * 0.5;
+    // m_vbd_z0 = -(vdim_k * vox_size_k) * 0.5;
+    // m_vbd_z1 = +(vdim_k * vox_size_k) * 0.5;
+
+
+    // m_bd_min_x = -(vox_size_j * img_size_j * 0.5f);
+    // m_bd_min_y = -(vox_size_i * img_size_i * 0.5f);
+    // m_bd_min_z = -(vox_size_k * img_size_k * 0.5f);
+
+
+    // m_vbd_y0 =  m_bd_min_y;  // -
+    // m_vbd_y1 = -m_bd_min_y;  // +
+    // m_vbd_x0 =  m_bd_min_x;  // -
+    // m_vbd_x1 = -m_bd_min_x;  // +
+    // m_vbd_z0 =  m_bd_min_z;  // -
+    // m_vbd_z1 = -m_bd_min_z;  // +
+
+
+    m_vbd_x0 = m_x_cuts[0];
+    m_vbd_x1 = m_x_cuts[m_img_size_j - 1];
+
+    m_vbd_y0 = m_y_cuts[0];
+    m_vbd_y1 = m_y_cuts[m_img_size_i - 1];
+
+    m_vbd_z0 = m_z_cuts[0];
+    m_vbd_z1 = m_z_cuts[m_img_size_k - 1];
+
+
+#if CFOV_ENABLED
+
+
+//    REAL fov_radius = 58 * m_vox_size_i * 0.5;
+    REAL fov_radius = (m_img_size_i - 1) * m_vox_size_i * 0.5;
+    REAL dx2dy2 = dx * dx + dy * dy;
+    REAL det = dx2dy2 * fov_radius * fov_radius -
+                 (dx * p0y - dy * p0x) * (dx * p0y - dy * p0x);
+
+    if (det > 0.0) {
+        REAL sqr_det = sqrtf(det);
+        REAL xdx_ydy = -(dx * p0x + dy * p0y);
+        t_min = (xdx_ydy - sqr_det) / dx2dy2;
+        t_max = (xdx_ydy + sqr_det) / dx2dy2;
+        return true;
+    } else {
+        return false;
+    }
+
+
+
+#else    
+    // these are tricks to avoid the `divide by zero' error
+    REAL ddx = (dx == 0) ? 1e-20 : dx;
+    REAL ddy = (dy == 0) ? 1e-20 : dy;
+    REAL ddz = (dz == 0) ? 1e-20 : dz;
+
+
+    // parameter (need change if ray goes from p1 to p0)
+#if 0
+    REAL tx0 = (ddx > 0) ? ((m_vbd_x0 - m_vox_size_j - p0x) / dx) : ((m_vbd_x1 + m_vox_size_j - p0x) / ddx);
+    REAL tx1 = (ddx > 0) ? ((m_vbd_x1 + m_vox_size_j - p0x) / dx) : ((m_vbd_x0 - m_vox_size_j - p0x) / ddx);
+    REAL ty0 = (ddy > 0) ? ((m_vbd_y0 + m_vox_size_i - p0y) / dy) : ((m_vbd_y1 - m_vox_size_i - p0y) / ddy);
+    REAL ty1 = (ddy > 0) ? ((m_vbd_y1 - m_vox_size_i - p0y) / dy) : ((m_vbd_y0 + m_vox_size_i - p0y) / ddy);
+    REAL tz0 = (ddz > 0) ? ((m_vbd_z0 - p0z) / dz) : ((m_vbd_z1 - p0z) / ddz);
+    REAL tz1 = (ddz > 0) ? ((m_vbd_z1 - p0z) / dz) : ((m_vbd_z0 - p0z) / ddz);
+#else    
+    REAL tx0 = (ddx > 0) ? ((m_vbd_x0 - p0x) / dx) : ((m_vbd_x1 - p0x) / ddx);
+    REAL tx1 = (ddx > 0) ? ((m_vbd_x1 - p0x) / dx) : ((m_vbd_x0 - p0x) / ddx);
+    REAL ty0 = (ddy > 0) ? ((m_vbd_y0 - p0y) / dy) : ((m_vbd_y1 - p0y) / ddy);
+    REAL ty1 = (ddy > 0) ? ((m_vbd_y1 - p0y) / dy) : ((m_vbd_y0 - p0y) / ddy);
+    REAL tz0 = (ddz > 0) ? ((m_vbd_z0 - p0z) / dz) : ((m_vbd_z1 - p0z) / ddz);
+    REAL tz1 = (ddz > 0) ? ((m_vbd_z1 - p0z) / dz) : ((m_vbd_z0 - p0z) / ddz);
+#endif
+    /*
+    if (dx == 0) {
+        tx0 = -99.9;
+        tx1 = +99.9;
+    }
+
+    if (dy == 0) {
+        ty0 = -99.9;
+        ty1 = +99.9;
+    }
+
+    if (dz == 0) {
+        tz0 = -99.9;
+        tz1 = +99.9;
+    }     
+     */
+    
+
+    // determine min and max
+    // t_min = std::max(std::max(tx0, std::max(ty0, tz0)), 0.0); 
+    // t_max = std::min(std::min(tx1, std::min(ty1, tz1)), 1.0);
+
+    t_min = std::max(std::max(tx0, std::max(ty0, tz0)), 0.0f); 
+    t_max = std::min(std::min(tx1, std::min(ty1, tz1)), 1.0f);   
+
+    // float temp_min1, temp_min2, temp_max1, temp_max2;
+    
+    // temp_min1 = std::max(ty0, tz0);
+    // temp_min2 = std::max(tx0, temp_min1);
+    // t_min = std::max(temp_min2, 0.0); 
+
+    // temp_max1 = std::min(ty1, tz1);
+    // temp_max2 = std::min(tx1, temp_max1);
+    // t_max = std::min(temp_max2, 1.0);
+
+    return (t_min < t_max);
+
+
+#endif
+}
+
+
+
+
+
 
 inline void DrawLine::calcTOFLOREndPoints(const int tbin_id,
         float& p0x, float& p0y, float& p0z,
@@ -669,9 +813,6 @@ int DrawLine::bpBresenham(float p0x, float p0y, float p0z,
     return nnz;
 }
 
-//****************************************************************
-//      Siddon ray tracing, for a TOF bin (tbin_id) on a line (LOR) drawn from (p0x,p0y,p0z) to (p1x,p1y,p1z) in a 3D image space (img)
-//****************************************************************
 float DrawLine::fpSiddon(float p0x, float p0y, float p0z,
                          float p1x, float p1y, float p1z,
                          const Image<float>& img,
@@ -681,47 +822,54 @@ float DrawLine::fpSiddon(float p0x, float p0y, float p0z,
         return 0.0f;
     }
 
+
+    // printf("fpSiddon.debug.1: tbin_id=%d\n", tbin_id);
+
 #ifdef USE_TOF
-    //****************************************************************************************
-    //      Normalized ray direction vectors
-    //****************************************************************************************
+    // normalized dir
     float nrm_dx;
     float nrm_dy;
     float nrm_dz;
-
-    //****************************************************************************************
-    //      Calculate TOF bin End Points (p0x, p0y, p0z), (p1x, p1y, p1z)
-    //****************************************************************************************
     calcTOFLOREndPoints(tbin_id, p0x, p0y, p0z, p1x, p1y, p1z, nrm_dx, nrm_dy, nrm_dz);
 
-    //****************************************************************************************
-    //      TOF bin center coordinate
-    //****************************************************************************************
+
+    // printf("fpSiddon.debug.2: tbin_id=%d\n", tbin_id);
+      
+    // timing bin center coord
     float tbc_x = (p0x + p1x) * 0.5f;
     float tbc_y = (p0y + p1y) * 0.5f;
     float tbc_z = (p0z + p1z) * 0.5f;
 #endif
 
-    //****************************************************************************************
-    //      Ray direction vectors
-    //****************************************************************************************
     float dx = p1x - p0x;
     float dy = p1y - p0y;
     float dz = p1z - p0z;
     float out = 0.0f;
 
-    //****************************************************************************************
-    //      Check if the ray is within the recon FOV (XY only?), if not set the projection to zero
-    //****************************************************************************************
+
+
 #ifndef CFOV_ENABLED // for square FOV
     float tmin, tmax;
 
-    if (!hitBoxFOV(tmin, tmax, p0x, dx, p0y, dy)) {
-        return 0.0f;
+    // printf("!hitBoxFOV(tmin, tmax, p0x, dx, p0y, dy)\n");
+
+    // // v0: Jian's code for object's length longer than scanner
+    // if (!hitBoxFOV(tmin, tmax, p0x, dx, p0y, dy)) {
+    //     printf("!!!hitBoxFOV(tmin, tmax, p0x, dx, p0y, dy)\n");
+    //     return 0.0f;
+    // }
+
+    // v1: Xuezhu's modified code (EXPLORER) for object's length shorter than scanner
+    if (!hitCheck(p0x, p0y, p0z, dx, dy, dz, tmin, tmax)) {
+        return 0;
     }
+
 
 #else // for cylindrical FOV
     float tmin, tmax;
+
+    // printf("!hitCylFOV(tmin, tmax, m_fov_radius, p0x, dx, p0y, dy)\n");
+
 
     if (!hitCylFOV(tmin, tmax, m_fov_radius, p0x, dx, p0y, dy)) {
         return 0.0f;
@@ -735,7 +883,6 @@ float DrawLine::fpSiddon(float p0x, float p0y, float p0z,
     tmax = std::min(tmax, 1.0f);
 
     // double check if the ray segment is still inside the FOV
-
     if (tmin > tmax) {
         return 0.0;
     }
@@ -745,23 +892,19 @@ float DrawLine::fpSiddon(float p0x, float p0y, float p0z,
 #endif
 #endif
 
-    //****************************************************************************************
-    //      Line length
-    //****************************************************************************************
+    // printf("fpSiddon.debug.3: tmax=%f\n", tmax);
+
+
     // weight
     float w0 = sqrtf(dx * dx + dy * dy + dz * dz) * weight;
 
-    //****************************************************************************************
-    //      calculate the first intersect point of ray with volume
-    //****************************************************************************************
+    // calculate the intersect point of ray with volume
     float p_1st_x = p0x + tmin * dx;
     float p_1st_y = p0y + tmin * dy;
     float p_1st_z = p0z + tmin * dz;
 
-    //****************************************************************************************
-    //      calculate the voxel index of the first voxel that line is intersecting with
-    //****************************************************************************************
     // see the definition of coordination system
+    // index of the first voxel
     int j = int((p_1st_x - m_bd_min_x) / m_vox_size_j); // 1: x
 //  j = std::min(j, m_img_size_j - 1); // because of the maximum index value is m_vdim[*]-1
     int i = int((-m_bd_min_y - p_1st_y) / m_vox_size_i); // 0: y
@@ -769,9 +912,7 @@ float DrawLine::fpSiddon(float p0x, float p0y, float p0z,
     int k = int((p_1st_z - m_bd_min_z) / m_vox_size_k); // 2 : z
 //  k = std::min(k, m_img_size_k - 1);
 
-    //****************************************************************************************
-    //      initial boundary
-    //****************************************************************************************
+    // initial boundary
     float bx0 = (dx > 0.0f) ?
                 m_bd_min_x + j * m_vox_size_j :
                 m_bd_min_x + (j + 1) * m_vox_size_j;
@@ -789,9 +930,7 @@ float DrawLine::fpSiddon(float p0x, float p0y, float p0z,
     float fy = (dy > 0.0f) ? m_vox_size_i : -m_vox_size_i;
     float fz = (dz > 0.0f) ? m_vox_size_k : -m_vox_size_k;
 
-    //****************************************************************************************
-    //      local variables (using register for optimization)
-    //****************************************************************************************
+    // local variables (using register for optimization)
     float tx = (dx == 0.0f) ? (99999999.9) : (bx0 + fx - p0x) / dx;
     float ty = (dy == 0.0f) ? (99999999.9) : (by0 + fy - p0y) / dy;
     float tz = (dz == 0.0f) ? (99999999.9) : (bz0 + fz - p0z) / dz;
@@ -799,6 +938,9 @@ float DrawLine::fpSiddon(float p0x, float p0y, float p0z,
     float vty = (dy == 0.0f) ? (99999999.9) : fy / dy;
     float vtz = (dz == 0.0f) ? (99999999.9) : fz / dz;
     float tm0 = tmin, tm1;
+
+
+    // printf("fpSiddon.debug.4: tbin_id=%d, tmax=%f, tm0=%f, tmax - tm0=%f\n", tbin_id, tmax, tm0, tmax - tm0);
 
     // ready to traval the image
     while (1) {
@@ -866,10 +1008,16 @@ float DrawLine::fpSiddon(float p0x, float p0y, float p0z,
 
 #else
         out += img(i0, j0, k0) * ww;
+
 #endif
 
         tm0 = tm1; // save previous result // modified! 07-28-2011
+
     }
+
+
+    // printf("out=%f, tbin_id=%d\n", out, tbin_id);
+
 
     // integral!
     return out;
@@ -903,7 +1051,13 @@ void DrawLine::bpSiddon(float p0x, float p0y, float p0z,
 #ifndef CFOV_ENABLED // for square FOV
     float tmin, tmax;
 
-    if (!hitBoxFOV(tmin, tmax, p0x, dx, p0y, dy)) {
+    // // v0: Jian's code for object's length longer than scanner
+    // if (!hitBoxFOV(tmin, tmax, p0x, dx, p0y, dy)) {
+    //     return;
+    // }
+
+    // v1: Xuezhu's modified code (EXPLORER) for object's length shorter than scanner
+    if (!hitCheck(p0x, p0y, p0z, dx, dy, dz, tmin, tmax)) {
         return;
     }
 
@@ -1076,7 +1230,13 @@ int DrawLine::bpSiddon(float p0x, float p0y, float p0z,
 #ifndef CFOV_ENABLED // for square FOV
     float tmin, tmax;
 
-    if (!hitBoxFOV(tmin, tmax, p0x, dx, p0y, dy)) {
+    // // v0: Jian's code for object's length longer than scanner
+    // if (!hitBoxFOV(tmin, tmax, p0x, dx, p0y, dy)) {
+    //     return 0;
+    // }
+
+    // v1: Xuezhu's modified code (EXPLORER) for object's length shorter than scanner
+    if (!hitCheck(p0x, p0y, p0z, dx, dy, dz, tmin, tmax)) {
         return 0;
     }
 
@@ -1513,6 +1673,9 @@ void ListModeProjector::readRawData(const char* filename)
 		memset(&m_add_fac_buff[0], 0, sizeof(float) * number_of_events);
 	}
 	
+
+
+    // assume mul_fac == 1.0
 	SystemLog::write("checking multiplicative factor file ...\n");
 	sprintf(str, "%s.mul_fac", filename);
 	SystemLog::write("file in %s ...\n", str);
@@ -1531,6 +1694,9 @@ void ListModeProjector::readRawData(const char* filename)
 			m_mul_fac_buff[n] = 1.0;
 		}
 	}
+
+
+
 
 /*
     SystemLog::write("checing angle index file ...\n");
@@ -1644,13 +1810,13 @@ int ListModeProjector::getNumberOfSubsets() const
     return m_number_of_subsets;
 }
 
-//****************************************************************
-//      Forward-project the current image img into proj for subset subset_id
-//****************************************************************
 void ListModeProjector::doForwardProj(Image<float>& proj,
                                       const Image<float>& img,
                                       int subset_id) const
 {
+
+    // printf("Debug #1...doForwardProj\n");
+
 	int ni = img.getDimI();
 	int nj = img.getDimJ();
 	int nk = img.getDimK();
@@ -1719,6 +1885,9 @@ void ListModeProjector::initializeSensitivityImage(const char* file, const SIZE&
 		
 		if (m_ipsf_model != 0) {
 			m_ipsf_model->blur(*m_sensitivity, sensitivity, IPSFModel::B_BLURRING);
+
+            SystemLog::write("\n\nm_ipsf_model->blur(*m_sensitivity, sensitivity, IPSFModel::B_BLURRING).\n\n");
+            
 		} else {
 			SystemLog::write("error: iPSFModel not initialized! "
 							 "required by sensitivity calculation.\n");
@@ -1770,11 +1939,14 @@ void ListModeProjector::doForwardProj(Image<float>& proj,
                                       const Image<float>& img,
                                       const std::vector<LMEVENT>& lm) const
 {
-    int num_of_events = lm.size();
+    
+    // printf("Debug #2...doForwardProj\n");
+
+    size_t num_of_events = lm.size();
     LMEVENT e;
     float p0x, p0y, p0z;
     float p1x, p1y, p1z;
-    int i;
+    size_t i;
 
     switch (ListModeProjector::raytracer_type) {
     case SIDDON: {
@@ -1790,6 +1962,9 @@ void ListModeProjector::doForwardProj(Image<float>& proj,
             p1x = m_xtal_pos_xy[e.xtal_id_2].x;
             p1y = m_xtal_pos_xy[e.xtal_id_2].y;
             p1z = m_ring_z[e.ring_id_2];
+
+            // printf("SIDDON: i=%lu, p0x=%f, p0y=%f, p0z=%f, p1x=%f, p1y=%f, p1z=%f, e.tbin_id=%d\n", i, p0x, p0y, p0z, p1x, p1y, p1z, e.tbin_id);
+
             proj[i] = m_proj->fpSiddon(p0x, p0y, p0z,
                                        p1x, p1y, p1z,
                                        img, 1.0f, e.tbin_id);
@@ -1811,6 +1986,9 @@ void ListModeProjector::doForwardProj(Image<float>& proj,
             p1x = m_xtal_pos_xy[e.xtal_id_2].x;
             p1y = m_xtal_pos_xy[e.xtal_id_2].y;
             p1z = m_ring_z[e.ring_id_2];
+
+            // printf("BRESENHAM: i=%lu, p0x=%f, p0y=%f, p0z=%f, p1x=%f, p1y=%f, p1z=%f, e.tbin_id=%d\n", i, p0x, p0y, p0z, p1x, p1y, p1z, e.tbin_id);
+
             proj[i] = m_proj->fpBresenham(p0x, p0y, p0z,
                                           p1x, p1y, p1z,
                                           img, 1.0f, e.tbin_id);
@@ -1831,11 +2009,11 @@ void ListModeProjector::doBackProj(Image<float>& img,
                                    const Image<float>& proj,
                                    const std::vector<LMEVENT>& lm) const
 {
-    int num_of_events = lm.size();
+    size_t num_of_events = lm.size();
     LMEVENT e;
     float p0x, p0y, p0z;
     float p1x, p1y, p1z;
-    int i;
+    size_t i;
 
     switch (ListModeProjector::raytracer_type) {
 
@@ -1882,25 +2060,32 @@ void ListModeProjector::doBackProj(Image<float>& img,
     }
 }
 
-
-//****************************************************************
-//      Forward-projection for the events within a subset
-//****************************************************************
 void ListModeProjector::doFProj(Image<float>& proj,
                                 const Image<float>& img,
                                 int subset_id) const
 {
-    int num_of_events = m_raw_lmdata_buff.size();
+    
+
+    size_t num_of_events = m_raw_lmdata_buff.size();
+
+    // printf("Debug #3...doFProj: subset_id=%d, num_of_events=%lu\n", subset_id, num_of_events);
+
     LMEVENT e;
     float p0x, p0y, p0z;
     float p1x, p1y, p1z;
-    int i;
+    size_t i;
 
     switch (ListModeProjector::raytracer_type) {
     case SIDDON: {
+
+    // printf("switch-case SIDDON....\n");
+
+        SystemLog::write("FP using SIDDON, initialized number of threads: %d (fp) \n", 
+            Projector::NUMBER_OF_THREADS_FP
+        );
 #if USE_OMP
         #pragma omp parallel for private(i, e, p0x, p0y, p0z, p1x, p1y, p1z) num_threads(Projector::NUMBER_OF_THREADS_FP)
-#endif
+#endif   
 
         for (i = subset_id; i < num_of_events; i += m_number_of_subsets) { 
             e = m_raw_lmdata_buff[i];
@@ -1909,15 +2094,24 @@ void ListModeProjector::doFProj(Image<float>& proj,
             p0z = m_ring_z[e.ring_id_1];
             p1x = m_xtal_pos_xy[e.xtal_id_2].x;
             p1y = m_xtal_pos_xy[e.xtal_id_2].y;
-            p1z = m_ring_z[e.ring_id_2];            
+            p1z = m_ring_z[e.ring_id_2];   
+
+            // printf("SIDDON: i=%lu, p0x=%f, p0y=%f, p0z=%f, p1x=%f, p1y=%f, p1z=%f, e.tbin_id=%d\n", i, p0x, p0y, p0z, p1x, p1y, p1z, e.tbin_id);
+
             proj[i / m_number_of_subsets] = m_proj->fpSiddon(p0x, p0y, p0z,
                                        						 p1x, p1y, p1z,
                                        						 img, 1.0f, e.tbin_id);
+
+            // printf("proj[i / m_number_of_subsets]=%f \n", proj[i / m_number_of_subsets]);
+
         }
     }
     break;
 
     case BRESENHAM: {
+        SystemLog::write("FP using BRESENHAM, initialized number of threads: %d (fp) \n", 
+            Projector::NUMBER_OF_THREADS_FP
+        );
 #if USE_OMP
         #pragma omp parallel for private(i, e, p0x, p0y, p0z, p1x, p1y, p1z) num_threads(Projector::NUMBER_OF_THREADS_FP)
 #endif
@@ -1930,6 +2124,9 @@ void ListModeProjector::doFProj(Image<float>& proj,
             p1x = m_xtal_pos_xy[e.xtal_id_2].x;
             p1y = m_xtal_pos_xy[e.xtal_id_2].y;
             p1z = m_ring_z[e.ring_id_2];
+            
+            // printf("BRESENHAM: i=%lu, p0x=%f, p0y=%f, p0z=%f, p1x=%f, p1y=%f, p1z=%f, e.tbin_id=%d\n", i, p0x, p0y, p0z, p1x, p1y, p1z, e.tbin_id);
+
             proj[i / m_number_of_subsets] = m_proj->fpBresenham(p0x, p0y, p0z,
                                           						p1x, p1y, p1z,
                                           						img, 1.0f, e.tbin_id);
@@ -1950,15 +2147,18 @@ void ListModeProjector::doBProj(Image<float>& img,
                                 const Image<float>& proj,
                                 int subset_id) const
 {
-    int num_of_events = m_raw_lmdata_buff.size();
+    size_t num_of_events = m_raw_lmdata_buff.size();
     LMEVENT e;
     float p0x, p0y, p0z;
     float p1x, p1y, p1z;
-    int i;
+    size_t i;
 
     switch (ListModeProjector::raytracer_type) {
 
     case SIDDON: {
+        SystemLog::write("BP using SIDDON, initialized number of threads: %d (bp) \n", 
+            Projector::NUMBER_OF_THREADS_BP
+        );
 #if USE_OMP
         #pragma omp parallel for private(i, e, p0x, p0y, p0z, p1x, p1y, p1z) num_threads(Projector::NUMBER_OF_THREADS_BP)
 #endif
@@ -1978,6 +2178,9 @@ void ListModeProjector::doBProj(Image<float>& img,
     break;
 
     case BRESENHAM: {
+        SystemLog::write("BP using BRESENHAM, initialized number of threads: %d (bp) \n", 
+            Projector::NUMBER_OF_THREADS_BP
+        );
 #if USE_OMP
         #pragma omp parallel for private(i, e, p0x, p0y, p0z, p1x, p1y, p1z) num_threads(Projector::NUMBER_OF_THREADS_BP)
 #endif

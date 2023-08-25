@@ -32,9 +32,16 @@ public:
 public:
     void initialize(const char* config_file);
 	void runRecon();
+    void runRecon2();
+    // void runRecon3();
+    void runexplmfp();
+    void runlmfp();
+    void runfplinesection(); //
 
 public:
 	enum {
+        // CIPEM = 3,
+        KEM = 2,
 		EM = 0, 
 		ADMM
 	};

@@ -84,10 +84,22 @@ private:
                    const float fov_radius,
                    const float p0x, const float dx,
                    const float p1x, const float dy);
+    
+
+    // v0: Jian's code for object's length longer than scanner
     // check if ray hits box, (x, y dir only, so it's a box without top and bottom faces)
     bool hitBoxFOV(float& tmin, float& tmax,
                    const float p0x, const float dx,
                    const float p0y, const float dy);
+
+
+    //Xuezhu's modified code for EXPLORER (object's length maybe shorter than scanner)
+    typedef float REAL;
+    bool hitCheck(const REAL p0x, const REAL p0y, const REAL p0z,
+                  const REAL p1x, const REAL p1y, const REAL p1z,
+                  REAL& t_min, REAL& t_max);
+
+
 
     // calculate TOF LOR end points according to the given timing bin idx
     void calcTOFLOREndPoints(const int tbin_id,
@@ -234,8 +246,8 @@ private:
 protected:
     std::vector<LMEVENT> m_raw_lmdata_buff;
 //    std::vector<std::vector<LMEVENT> > m_lmdata_subsets; // not necessary any more
-    int m_number_of_subsets;
-    int m_max_subset_size;
+    size_t m_number_of_subsets;   // int
+    size_t m_max_subset_size;   // int 
 // make geometric subsets ??
 //    std::vector<int> m_angle_index_buff;    
 
