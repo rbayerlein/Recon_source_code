@@ -66,4 +66,6 @@ prl2lm:
 nlm_flt:
 	$(CC) -o nlm_flt nlm_flt.cpp -O3 -fopenmp -I$(INC)
 
+docs:
+	doxygen makeDocumentation
 
