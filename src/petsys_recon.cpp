@@ -840,7 +840,7 @@ void KEMBasedPLReconstructor::run(Projector* projector,
     SystemLog::write("KEM-based algorithm ...\n");
 
 
-    SystemLog::write("Loading Kernel Materix ... ");
+    SystemLog::write("Loading Kernel Matrix ... ");
 
     // const char* argv5 = argv[5];
     // char kmat_fname[512];
@@ -852,7 +852,8 @@ void KEMBasedPLReconstructor::run(Projector* projector,
     std::stringstream ostr;
     ostr.str(""); // clear
 
-    ostr << "./*.sysmat.239x239x679.sym.pmat";    
+    //ostr << "./*.sysmat.239x239x679.sym.pmat";
+    ostr << "/home/rbayerlein/data/20210730/AM_8071375_155818/UCD/cip.ker.pmat";    
 
     printf("%s\n", ostr.str().c_str());
 
@@ -861,12 +862,11 @@ void KEMBasedPLReconstructor::run(Projector* projector,
     std::size_t total_sz = 0;  
     kmat = new PSpMatrix();
     kmat->read(ostr.str().c_str()); 
-    total_sz += kmat->getNNZ()*sizeof(SSpMatrix::PACKAGE) +
-                (kmat->getRowNum()+1)*sizeof(int);
+    total_sz += kmat->getNNZ()*sizeof(float) + (kmat->getRowNum()+1)*sizeof(int) + (kmat->getNNZ()*sizeof(int)) + 2*sizeof(int) + sizeof(long long);
 
     printf("OK! total memory space occupied: %lu (bytes)\n", total_sz);
     printf("kmat->getNNZ(): %lu (bytes)\n", kmat->getNNZ());
-    printf("sizeof(SSpMatrix::PACKAGE): %lu (bytes)\n", sizeof(SSpMatrix::PACKAGE));
+   // printf("sizeof(SSpMatrix::PACKAGE): %lu (bytes)\n", sizeof(SSpMatrix::PACKAGE));
     printf("(kmat->getRowNum()+1): %lu (bytes)\n", (kmat->getRowNum()+1));
     printf("(kmat->getRowNum()+1)*sizeof(int): %lu (bytes)\n", (kmat->getRowNum()+1)*sizeof(int));
 
@@ -945,10 +945,13 @@ void KEMBasedPLReconstructor::run(Projector* projector,
 
             alpha_bk.clear();
             for (int m = 0; m < kmat->getRowNum(); m++) {
+            	//cout << m << "\t";
                 float out = 0.0f;
+                //if (m<200) cout << kmat->getRowPtr()[m] << endl;
                 for (int n = kmat->getRowPtr()[m]; n < kmat->getRowPtr()[m+1]; n ++) {
                     int col = kmat->getCol()[n] - 1;
                     float val = kmat->getVal()[n];
+               		//cout << "\t" << n << "\t" << col << "\t" << val << endl;
                     out += xem[col] * val;
                 }
                 alpha_bk[m] = out;

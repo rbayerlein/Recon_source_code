@@ -385,6 +385,7 @@ bool PSpMatrix::read(const char* filename)
 
         // row #
         input.read((char*)&m_row_num, sizeof(int));
+        printf("m_row_num=%lu\n", m_row_num);
 
         if (input.fail()) {
 #if DEBUG
@@ -395,6 +396,7 @@ bool PSpMatrix::read(const char* filename)
 
         // col #
         input.read((char*)&m_col_num, sizeof(int));
+        printf("m_col_num=%lu\n",m_col_num);
 
         if (input.fail()) {
 #if DEBUG
@@ -405,6 +407,7 @@ bool PSpMatrix::read(const char* filename)
 
         // nz #
         input.read((char*)&m_nnz, sizeof(long long));
+        printf("m_nnz=%lu\n",m_nnz);
 
         if (input.fail()) {
 #if DEBUG

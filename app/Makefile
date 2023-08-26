@@ -21,7 +21,7 @@ lmrecon_nontof:
 	$(CC) -o lmrecon_nontof lmrecon.cpp $(SRC) -I$(INC) -O3 -DDEBUG -fopenmp -DUSE_OMP -lm   # -DUSE_TOF 
 
 lmrecon_tof:
-	$(CC) -o lmrecon_tof lmrecon.cpp $(SRC) -I$(INC) -O3 -DUSE_TOF -DDEBUG -DUSE_TOF-fopenmp -DUSE_OMP -lm
+	$(CC) -o lmrecon_tof lmrecon.cpp $(SRC) -I$(INC) -O3 -DUSE_TOF -DDEBUG -DUSE_TOF -fopenmp -DUSE_OMP -lm
 
 #	$(CC) -o lmrecon lmrecon.cpp $(SRC) -I$(INC) -O3 -DUSE_TOF -DDEBUG -fopenmp -lm
 
